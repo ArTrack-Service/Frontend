@@ -18,7 +18,7 @@ export default function Home() {
         <MapViewer />
       </div>
       <BottomSheet searchQuery={searchQuery} />
-      <BottomNav />
+      <BottomNav activeIndex={0}/>
     </div>
   )
 }
