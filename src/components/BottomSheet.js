@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Star, StarOff, X } from "lucide-react";
 
-export default function BottomSheet({ searchQuery }) {
+export default function BottomSheet({ searchQuery, items }) {
     const sheetRef = useRef(null);
     const [startY, setStartY] = useState(0);
     const [currentHeight, setCurrentHeight] = useState(250);
@@ -50,17 +50,6 @@ export default function BottomSheet({ searchQuery }) {
             }
         };
     }, [dragging, startY, currentHeight, maxHeight]);
-
-    const items = [...Array(10)].map((_, idx) => ({
-        id: idx,
-        name: `작품명 ${idx + 1}`,
-        description: `이 작품은 ${idx + 1}번째 작품으로, 아름다운 예술성을 지니고 있습니다.`,
-        location: `서울특별시 어디구 어딘가`,
-        category: ["회화", "조각", "사진", "설치"][idx % 4],
-        isFavorite: idx % 3 === 0,
-        image: `https://picsum.photos/seed/art${idx}/200/150`,
-        rating: (Math.random() * 5).toFixed(1),
-    }));
 
     const filteredItems = items.filter((item) => {
         const matchesCategory = activeCategory === "전체" || item.category === activeCategory;
