@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Star, StarOff, X } from "lucide-react";
 
-export default function BottomSheet({ searchQuery, items }) {
+export default function BottomSheet({ searchQuery, items, selectedItem, setSelectedItem }) {
     const sheetRef = useRef(null);
     const [startY, setStartY] = useState(0);
     const [currentHeight, setCurrentHeight] = useState(250);
@@ -11,7 +11,6 @@ export default function BottomSheet({ searchQuery, items }) {
     const [dragging, setDragging] = useState(false);
     const [activeCategory, setActiveCategory] = useState("전체");
     const [isFavoriteOnly, setIsFavoriteOnly] = useState(false);
-    const [selectedItem, setSelectedItem] = useState(null); 
 
     const MIN_HEIGHT = 150;
     const categories = ["전체", "회화", "조각", "사진", "설치"];
@@ -19,6 +18,14 @@ export default function BottomSheet({ searchQuery, items }) {
     useEffect(() => {
         setMaxHeight(window.innerHeight * 0.6);
     }, []);
+
+    useEffect(() => {
+        if (selectedItem) {
+            setCurrentHeight(maxHeight * 0.6);
+        } else {
+            setCurrentHeight(250); 
+        }
+    }, [selectedItem, maxHeight]);
 
     const handleTouchStart = (e) => {
         setStartY(e.touches[0].clientY);
@@ -100,7 +107,7 @@ export default function BottomSheet({ searchQuery, items }) {
         )}
 
         {/* 작품 목록 또는 세부 정보 */}
-        <div className="overflow-y-auto px-4 flex-1 pb-20">
+        <div className="overflow-y-auto px-4 flex-1 pb-20 mb-5">
             {!selectedItem ? (
             filteredItems.length > 0 ? (
                 filteredItems.map((item) => (
