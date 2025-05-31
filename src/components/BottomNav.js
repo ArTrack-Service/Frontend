@@ -1,28 +1,38 @@
-import { useRouter } from 'next/navigation'
+import { Home, MapPin, PlusCircle, User } from "lucide-react";
+import Link from "next/link";
 
+const BottomNav = ({ activeIndex }) => {
+  const menu = [
+    { icon: Home, label: "홈", href: "/" },
+    { icon: MapPin, label: "추천 경로", href: "/recommend" },
+    { icon: PlusCircle, label: "경로 추가", href: "/addpath" },
+    { icon: User, label: "마이 경로", href: "/mypath" },
+  ];
 
-export default function BottomNav() {
-const navItems = ['추천', '경로추가', '홈', '즐겨찾기', '나']
-const router = useRouter()
+  return (
+    <nav className="fixed bottom-0 w-full bg-white z-50 flex justify-around py-3">
+      {menu.map((item, index) => {
+        const Icon = item.icon;
+        const isActive = activeIndex === index;
 
-
-const handleNavClick = (item) => {
-    if (item === '추천')
-        router.push('/recommend')
-    else if (item === '홈')
-        router.push('/')
-    else if (item === '나')
-        router.push('/my')
-}
-
-return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t flex justify-around items-center z-30">
-    {navItems.map((item, idx) => (
-        <div key={idx} onClick={() => handleNavClick(item)} className="flex flex-col items-center text-sm text-gray-700">
-            <div className="w-6 h-6 bg-gray-300 mb-1 rounded-full" />
-            <span>{item}</span>
-        </div>
-    ))}
+        return (
+          <Link href={item.href} key={index} className="flex flex-col items-center">
+            <Icon
+              size={24}
+              className={isActive ? "text-purple-700" : "text-gray-500"}
+            />
+            <span
+              className={`text-xs mt-2 ${
+                isActive ? "text-purple-700 font-semibold" : "text-gray-500"
+              }`}
+            >
+              {item.label}
+            </span>
+          </Link>
+        );
+      })}
     </nav>
-)
-}
+  )
+};
+
+export default BottomNav;
