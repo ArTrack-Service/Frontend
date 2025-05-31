@@ -40,14 +40,14 @@ export default function BottomSheet({ searchQuery }) {
     useEffect(() => {
         const sheet = sheetRef.current;
         if (sheet) {
-        sheet.addEventListener("touchmove", handleTouchMove);
-        sheet.addEventListener("touchend", handleTouchEnd);
+            sheet.addEventListener("touchmove", handleTouchMove);
+            sheet.addEventListener("touchend", handleTouchEnd);
         }
         return () => {
-        if (sheet) {
-            sheet.removeEventListener("touchmove", handleTouchMove);
-            sheet.removeEventListener("touchend", handleTouchEnd);
-        }
+            if (sheet) {
+                sheet.removeEventListener("touchmove", handleTouchMove);
+                sheet.removeEventListener("touchend", handleTouchEnd);
+            }
         };
     }, [dragging, startY, currentHeight, maxHeight]);
 
@@ -71,10 +71,10 @@ export default function BottomSheet({ searchQuery }) {
 
     return (
         <div
-        ref={sheetRef}
-        onTouchStart={handleTouchStart}
-        className="absolute bottom-16 left-0 right-0 z-20 bg-white rounded-t-2xl shadow-lg transition-all duration-200 flex flex-col"
-        style={{ height: `${currentHeight}px` }}
+            ref={sheetRef}
+            onTouchStart={handleTouchStart}
+            className="absolute bottom-16 left-0 right-0 z-20 bg-white rounded-t-2xl shadow-lg transition-all duration-200 flex flex-col"
+            style={{ height: `${currentHeight}px` }}
         >
         <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-2 cursor-pointer" />
 
