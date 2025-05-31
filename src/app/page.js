@@ -10,6 +10,7 @@ const BottomSheet = dynamic(() => import('../components/BottomSheet'), { ssr: fa
 
 export default function Home() {
     const [searchQuery, setSearchQuery] = useState('')
+    const [selectedItem, setSelectedItem] = useState(null);
     
     const realLocations = [
         '서울특별시 종로구 세종대로 175',
@@ -41,9 +42,9 @@ export default function Home() {
                 <div className="absolute top-4 z-10 w-full">
                     <SearchBar onSearch={setSearchQuery} />
                 </div>
-                <MapViewer items={items} />
+                <MapViewer items={items} setSelectedItem={setSelectedItem} />
             </div>
-            <BottomSheet searchQuery={searchQuery} items={items} />
+            <BottomSheet searchQuery={searchQuery} items={items} selectedItem={selectedItem} setSelectedItem={setSelectedItem}/>
             <BottomNav activeIndex={0}/>
         </div>
     )

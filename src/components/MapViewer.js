@@ -1,80 +1,149 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
-export default function MapViewer({ items }) {
-  const clientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
+export default function MapViewer({ items, setSelectedItem }) {
+    const clientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
+    const mapRef = useRef(null)
+    const markersRef = useRef([])
+    const currentPositionRef = useRef(null)
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
+    useEffect(() => {
+        if (typeof window === 'undefined') return
 
-    const script = document.createElement('script')
-    script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}&submodules=geocoder`
-    script.async = true
+        const script = document.createElement('script')
+        script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}&submodules=geocoder`
+        script.async = true
 
-    script.onload = () => {
-      if (!window.naver) {
-        console.error('Naver maps failed to load')
-        return
-      }
+        script.onload = () => {
+        if (!window.naver) {
+            console.error('Naver maps failed to load')
+            return
+        }
 
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-          const { latitude, longitude } = pos.coords
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+            const { latitude, longitude } = pos.coords
+            currentPositionRef.current = new naver.maps.LatLng(latitude, longitude)
 
-          const map = new naver.maps.Map('map', {
-            center: new naver.maps.LatLng(latitude, longitude),
-            zoom: 14,
-            scaleControl: false,
-            logoControl: false,
-            mapDataControl: false,
-          })
+            if (!mapRef.current) {
+                mapRef.current = new naver.maps.Map('map', {
+                center: currentPositionRef.current,
+                zoom: 14,
+                scaleControl: false,
+                logoControl: false,
+                mapDataControl: false,
+                })
 
-          new naver.maps.Marker({
-            position: new naver.maps.LatLng(latitude, longitude),
-            map,
-            title: '내 위치',
-            icon: {
-                content: `
-                <div class="relative w-6 h-6">
-                    <div class="absolute w-6 h-6 rounded-full bg-blue-500 opacity-60 animate-ping"></div>
-                    <div class="absolute inset-1/2 w-3 h-3 rounded-full bg-blue-500 transform -translate-x-1/2 -translate-y-1/2"></div>
-                </div>
-                `
-            }
-          })
-
-          items.forEach(({ id, name, location }) => {
-            naver.maps.Service.geocode({ address: location }, (status, response) => {
-              if (status === naver.maps.Service.Status.OK) {
-                const result = response.result
-                if (result.items && result.items.length > 0) {
-                  const point = result.items[0].point
-                  const latLng = new naver.maps.LatLng(point.y, point.x)
-
-                  const marker = new naver.maps.Marker({
-                    position: latLng,
-                    map,
-                    title: name,
-                  })
-
-                  const infowindow = new naver.maps.InfoWindow({
-                    content: `<div style="padding:5px;font-size:14px;">${name}<br/>${location}</div>`
-                  })
-
-                  marker.addListener('click', () => {
-                    infowindow.open(map, marker)
-                  })
+                new naver.maps.Marker({
+                position: currentPositionRef.current,
+                map: mapRef.current,
+                title: '내 위치',
+                icon: {
+                    content: `
+                    <div class="relative w-6 h-6">
+                        <div class="absolute w-6 h-6 rounded-full bg-blue-500 opacity-60 animate-ping"></div>
+                        <div class="absolute inset-1/2 w-3 h-3 rounded-full bg-blue-500 transform -translate-x-1/2 -translate-y-1/2"></div>
+                    </div>
+                    `
                 }
-              } else {
-                console.warn(`Geocode 실패: ${location}`, status)
-              }
+                })
+            }
+
+            markersRef.current.forEach(marker => marker.setMap(null))
+            markersRef.current = []
+
+            items.forEach((item) => {
+                const { name, location } = item
+                naver.maps.Service.geocode({ address: location }, (status, response) => {
+                if (status === naver.maps.Service.Status.OK) {
+                    const point = response.result.items[0].point
+                    const latLng = new naver.maps.LatLng(point.y, point.x)
+
+                    const marker = new naver.maps.Marker({
+                    position: latLng,
+                    map: mapRef.current,
+                    title: name,
+                    })
+
+                    const infowindow = new naver.maps.InfoWindow({
+                    content: `<div style="padding:5px;font-size:14px;">${name}<br/>${location}</div>`
+                    })
+
+                    marker.addListener('click', () => {
+                    mapRef.current.setCenter(marker.getPosition())
+                    infowindow.open(mapRef.current, marker)
+                    setSelectedItem(item)
+                    })
+
+                    markersRef.current.push(marker)
+                }
+                })
             })
-          })
+            }, () => {
+            const defaultPosition = new naver.maps.LatLng(37.5665, 126.9780)
+            currentPositionRef.current = defaultPosition
+
+            if (!mapRef.current) {
+                mapRef.current = new naver.maps.Map('map', {
+                center: defaultPosition,
+                zoom: 14,
+                scaleControl: false,
+                logoControl: false,
+                mapDataControl: false,
+                })
+            }
+            })
+        }
+        }
+
+        document.head.appendChild(script)
+
+        return () => {
+        document.head.removeChild(script)
+        if (markersRef.current.length) {
+            markersRef.current.forEach(marker => marker.setMap(null))
+            markersRef.current = []
+        }
+        if (mapRef.current) {
+            mapRef.current.destroy()
+            mapRef.current = null
+        }
+        }
+    }, [clientId])
+
+    useEffect(() => {
+        if (!mapRef.current) return
+
+        markersRef.current.forEach(marker => marker.setMap(null))
+        markersRef.current = []
+
+        items.forEach((item) => {
+        const { name, location } = item
+        naver.maps.Service.geocode({ address: location }, (status, response) => {
+            if (status === naver.maps.Service.Status.OK) {
+            const point = response.result.items[0].point
+            const latLng = new naver.maps.LatLng(point.y, point.x)
+
+            const marker = new naver.maps.Marker({
+                position: latLng,
+                map: mapRef.current,
+                title: name,
+            })
+
+            const infowindow = new naver.maps.InfoWindow({
+                content: `<div style="padding:5px;font-size:14px;">${name}<br/>${location}</div>`
+            })
+
+            marker.addListener('click', () => {
+                mapRef.current.setCenter(marker.getPosition())
+                infowindow.open(mapRef.current, marker)
+                setSelectedItem(item)
+            })
+
+            markersRef.current.push(marker)
+            }
         })
-      }
-    }
+        })
+    }, [items, setSelectedItem])
 
-    document.head.appendChild(script)
-  }, [clientId, items]) 
-
-  return <div id="map" className="w-full h-full" style={{ minHeight: '400px' }} />
+    return <div id="map" className="w-full h-full" style={{ minHeight: '400px' }} />
 }
