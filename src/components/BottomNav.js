@@ -4,9 +4,9 @@ import Link from "next/link";
 const BottomNav = ({ activeIndex }) => {
   const menu = [
     { icon: Home, label: "홈", href: "/" },
-    { icon: MapPin, label: "추천 경로", href: "/category" },
-    { icon: PlusCircle, label: "경로 추가", href: "/search" },
-    { icon: User, label: "마이 경로", href: "/mypage" },
+    { icon: MapPin, label: "추천 경로", href: "/recommend" },
+    { icon: PlusCircle, label: "경로 추가", href: "/addpath" },
+    { icon: User, label: "마이 경로", href: "/mypath" },
   ];
 
   return (
