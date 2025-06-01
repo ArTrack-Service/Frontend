@@ -1,0 +1,109 @@
+'use client'
+import { useState } from 'react'
+import { Dialog } from '@headlessui/react'
+import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
+import { ChevronLeft, X } from 'lucide-react';
+
+const MapViewer = dynamic(() => import('@/components/MapViewer'), { ssr: false })
+
+export default function RecommendedPath() {
+    const searchParams = useSearchParams()
+    const pathString = searchParams.get('path')
+    const path = pathString ? JSON.parse(decodeURIComponent(pathString)) : null
+    const router = useRouter()
+    const [showDialog, setShowDialog] = useState(false)
+    const [memo, setMemo] = useState('')
+    const [share, setShare] = useState(false)
+
+    return (
+        <div className="flex flex-col h-screen px-4 py-5 bg-white">
+            <div className="relative p-4 pb-2 rounded-md">
+                {/* 뒤로가기 아이콘 */}
+                <button
+                    onClick={() => router.back()}
+                    className="absolute top-4 left-4 text-gray-500 hover:text-gray-700"
+                >
+                    <ChevronLeft className="w-6 h-6" />
+                </button>
+                <div className="pl-10">
+                    <h1 className="text-lg font-semibold text-gray-800">{path.courseId}</h1>
+                </div>
+            </div>
+
+            <div className="mb-6">
+                <p className="text-sm font-medium text-gray-700 mb-2">지도</p>
+                <div className="w-full h-64 rounded-md overflow-hidden shadow-md">
+                    <MapViewer items={[]} routeItems={[]}/>
+                </div>
+            </div>
+
+            <div className="mb-6">
+                <p className="text-sm font-medium text-gray-700 mb-2">예술작품</p>
+                <div className="flex flex-col gap-4 max-h-64 overflow-y-auto">
+                    {path.artworks.map((artwork, idx) => (
+                        <div key={idx}
+                            className="flex gap-3 items-center bg-white rounded-xl shadow-md p-4 mb-4 cursor-pointer hover:shadow-lg transition-shadow">
+                            <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
+                                <img src={artwork.image}
+                                    alt={artwork.name}
+                                    className="w-full h-full object-cover rounded-md"
+                                    loading="lazy" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-gray-800">{artwork.name}</h4>
+                                <p className="text-sm text-gray-500">{artwork.description}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* 추가하기 버튼 */}
+            <div className="pt-4">
+                <button
+                    onClick={() => {setShowDialog(true)}}
+                    className="w-full bg-blue-600 text-white py-2 rounded shadow hover:bg-blue-700 transition"
+                >
+                    추가하기
+                </button>
+            </div>
+
+            {/* 팝업 */}
+            <Dialog open={showDialog} onClose={() => setShowDialog(false)} className="fixed inset-0 z-2000">
+                <div className="flex items-center justify-center min-h-screen bg-black/40 px-4">
+                <Dialog.Panel className="bg-white w-full max-w-md rounded-lg p-6 space-y-4">
+                    <div className="flex justify-between items-center">
+                    <Dialog.Title className="text-lg font-semibold">경로 메모</Dialog.Title>
+                    <button onClick={() => setShowDialog(false)}><X className="w-5 h-5 text-gray-500" /></button>
+                    </div>
+                    <textarea
+                        value={memo}
+                        onChange={(e) => setMemo(e.target.value)}
+                        placeholder="이 경로에 대해 메모를 남겨주세요"
+                        className="w-full border rounded p-2 text-sm"
+                        rows={4}
+                    />
+                    <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} />
+                        다른 사람과 공유하시겠습니까?
+                    </label>
+                    <button
+                        onClick={() => {
+                            console.log('저장됨', { path, memo, share })
+                            alert('경로가 저장되었습니다.')
+                            setShowDialog(false)
+                    }}
+                    className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                    >
+                        추가하기
+                    </button>
+                </Dialog.Panel>
+                </div>
+            </Dialog>
+
+            <div className="h-16" />
+        </div>
+    )
+}

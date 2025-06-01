@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation'
 import BottomNav from '../../components/BottomNav'
 
-export default function Home() {
+export default function My() {
   const router = useRouter()
 
   const mockCourse = [
@@ -19,7 +19,7 @@ export default function Home() {
     <div className="relative w-full h-screen overflow-hidden flex flex-col">
       <div className="flex items-center gap-3 mb-6 p-4 rounded-md shadow-md">
         <div className="w-24 h-24 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
-          <img src="https://picsum.photos/seed/user/200/150"
+          <img src="https://picsum.photos/seed/usergit/200/150"
               alt="profile"
               className="w-full h-full object-cover rounded-md"
               loading="lazy" />
@@ -34,7 +34,7 @@ export default function Home() {
         {mockCourse.map((course, idx) => (
           <div key={course.courseID}
                className="flex gap-3 items-center bg-white rounded-xl shadow-md p-4 mb-4 cursor-pointer hover:shadow-lg transition-shadow" 
-               onClick={()=>router.push("/course")}>
+               onClick={()=>router.push("/mypath/path")}>
             <div className="flex-1">
               <div className="flex items-center gap-1">
                 <h4 className="font-semibold text-base">산책 코스 {idx + 1}</h4>
@@ -45,7 +45,7 @@ export default function Home() {
         ))}
       </div>
 
-      <BottomNav />
+      <BottomNav activeIndex={3} />
     </div>
   )
 }
