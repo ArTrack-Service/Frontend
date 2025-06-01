@@ -26,42 +26,42 @@ export default function CoursePage() {
       {
         name: '작품명 1',
         description: '어쩌구 저쩌구',
-        image: '/images/art1.jpg',
+        image: 'https://picsum.photos/seed/art1/200/150',
         lat: 37.5665,
         lon: 126.9780
       },
       {
         name: '작품명 2',
         description: '어쩌구 저쩌구',
-        image: '/images/art2.jpg',
+        image: 'https://picsum.photos/seed/art2/200/150',
         lat: 37.5670,
         lon: 126.9770
       },
       {
         name: '작품명 3',
         description: '어쩌구 저쩌구',
-        image: '/images/art1.jpg',
+        image: 'https://picsum.photos/seed/art3/200/150',
         lat: 37.5665,
         lon: 126.9780
       },
       {
         name: '작품명 4',
         description: '어쩌구 저쩌구',
-        image: '/images/art1.jpg',
+        image: 'https://picsum.photos/seed/art4/200/150',
         lat: 37.5665,
         lon: 126.9780
       },
       {
         name: '작품명 5',
         description: '어쩌구 저쩌구',
-        image: '/images/art1.jpg',
+        image: 'https://picsum.photos/seed/art5/200/150',
         lat: 37.5665,
         lon: 126.9780
       },
       {
         name: '작품명 6',
         description: '어쩌구 저쩌구',
-        image: '/images/art1.jpg',
+        image: 'https://picsum.photos/seed/art6/200/150',
         lat: 37.5665,
         lon: 126.9780
       },
@@ -109,7 +109,7 @@ export default function CoursePage() {
       <div className="mb-6">
         <p className="text-sm font-medium text-gray-700 mb-2">지도</p>
         <div className="w-full h-64 rounded-md overflow-hidden shadow-md">
-          <MapViewer />
+          <MapViewer items={course.artworks} setSelectedItem={() => {}} />
         </div>
       </div>
 
@@ -117,9 +117,13 @@ export default function CoursePage() {
         <p className="text-sm font-medium text-gray-700 mb-2">예술작품</p>
         <div className="flex flex-col gap-4 max-h-64 overflow-y-auto">
           {course.artworks.map((artwork, idx) => (
-            <div key={idx} className="flex items-center gap-3 border-b pb-2">
-              <div className="w-16 h-16 bg-gray-200 flex items-center justify-center overflow-hidden rounded-md">
-                <img src={artwork.image} alt={artwork.name} className="object-cover w-full h-full" />
+            <div key={idx}
+                 className="flex gap-3 items-center bg-white rounded-xl shadow-md p-4 mb-4 cursor-pointer hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
+                <img src={artwork.image}
+                     alt={artwork.name}
+                     className="w-full h-full object-cover rounded-md"
+                     loading="lazy" />
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-800">{artwork.name}</h4>
