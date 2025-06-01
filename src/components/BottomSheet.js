@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Star, StarOff, X } from "lucide-react";
 
-export default function BottomSheet({ searchQuery, items, selectedItem, setSelectedItem }) {
+export default function BottomSheet({ searchQuery, items, selectedItem, setSelectedItem, routeItems, setRouteItems  }) {
     const sheetRef = useRef(null);
     const [startY, setStartY] = useState(0);
     const [currentHeight, setCurrentHeight] = useState(250);
@@ -111,30 +111,50 @@ export default function BottomSheet({ searchQuery, items, selectedItem, setSelec
             {!selectedItem ? (
             filteredItems.length > 0 ? (
                 filteredItems.map((item) => (
-                <div
-                    key={item.id}
-                    onClick={() => setSelectedItem(item)}
-                    className="flex gap-3 items-center bg-white rounded-xl shadow-md p-4 mb-4 cursor-pointer hover:shadow-lg transition-shadow"
-                >
-                    <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
-                    <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover rounded-md"
-                        loading="lazy"
-                    />
+                    <div
+                        key={item.id}
+                        className="flex items-center justify-between bg-white rounded-xl shadow-md p-4 mb-4 cursor-pointer hover:shadow-lg transition-shadow"
+                    >
+                        <div
+                            onClick={() => setSelectedItem(item)}
+                            className="flex items-center gap-3 flex-1"
+                        >
+                            <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
+                            <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-full h-full object-cover rounded-md"
+                                loading="lazy"
+                            />
+                            </div>
+                            <div>
+                            <div className="flex items-center gap-1">
+                                <h4 className="font-semibold text-base">{item.name}</h4>
+                                {item.isFavorite && (
+                                <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                                )}
+                            </div>
+                            <p className="text-sm text-gray-500">{item.location}</p>
+                            <p className="text-xs text-blue-400 mt-0.5">#{item.category}</p>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                if (routeItems && !routeItems.find((i) => i.id === item.id)) {
+                                    const confirmAdd = window.confirm("이 항목을 추가하시겠습니까?");
+                                    if (confirmAdd) {
+                                        setRouteItems((prev) => [...prev, item]);
+                                    }
+                                } else {
+                                    alert("이미 추가된 항목입니다.");
+                                }
+                            }}
+                            className="ml-4 px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                        >
+                            추가
+                        </button>
                     </div>
-                    <div className="flex-1">
-                    <div className="flex items-center gap-1">
-                        <h4 className="font-semibold text-base">{item.name}</h4>
-                        {item.isFavorite && (
-                        <Star size={14} className="text-yellow-400 fill-yellow-400" />
-                        )}
-                    </div>
-                    <p className="text-sm text-gray-500">{item.location}</p>
-                    <p className="text-xs text-blue-400 mt-0.5">#{item.category}</p>
-                    </div>
-                </div>
                 ))
             ) : (
                 <p className="text-center text-gray-400 mt-4">검색 결과가 없습니다.</p>
@@ -142,9 +162,9 @@ export default function BottomSheet({ searchQuery, items, selectedItem, setSelec
             ) : (
             <div className="flex flex-col h-full">
                 <button
-                onClick={() => setSelectedItem(null)}
-                className="self-end p-2 pt-5 pb-5 rounded-full hover:bg-gray-100 transition"
-                aria-label="세부 정보 닫기"
+                    onClick={() => setSelectedItem(null)}
+                    className="self-end p-2 pt-5 pb-5 rounded-full hover:bg-gray-100 transition"
+                    aria-label="세부 정보 닫기"
                 >
                 <X size={24} />
                 </button>
