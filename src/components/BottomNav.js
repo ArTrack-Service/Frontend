@@ -19,11 +19,11 @@ const BottomNav = ({ activeIndex }) => {
           <Link href={item.href} key={index} className="flex flex-col items-center">
             <Icon
               size={24}
-              className={isActive ? "text-purple-700" : "text-gray-500"}
+              className={isActive ? "text-blue-500" : "text-gray-500"}
             />
             <span
               className={`text-xs mt-2 ${
-                isActive ? "text-purple-700 font-semibold" : "text-gray-500"
+                isActive ? "text-blue-500 font-semibold" : "text-gray-500"
               }`}
             >
               {item.label}
