@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-export default function MapViewer({ items, setSelectedItem }) {
+export default function MapViewer({ items, setSelectedItem, routeItems, setRouteItems }) {
     const clientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
     const mapRef = useRef(null)
     const markersRef = useRef([])
@@ -59,20 +59,44 @@ export default function MapViewer({ items, setSelectedItem }) {
                     const latLng = new naver.maps.LatLng(point.y, point.x)
 
                     const marker = new naver.maps.Marker({
-                    position: latLng,
-                    map: mapRef.current,
-                    title: name,
+                        position: latLng,
+                        map: mapRef.current,
+                        title: name,
                     })
 
                     const infowindow = new naver.maps.InfoWindow({
-                    content: `<div style="padding:5px;font-size:14px;">${name}<br/>${location}</div>`
-                    })
+                        content: `
+                            <div style="display:flex;flex-direction:column;padding:5px;font-size:14px;">
+                                <p>${name}</p>
+                                <p>${location}</p>
+                                <button id="add-button-${item.id}" style="margin-top:5px;padding:5px 10px;font-size:12px;background-color:#3b82f6;color:white;border:none;border-radius:5px;cursor:pointer;">
+                                    추가
+                                </button>
+                            </div>
+                        `
+                    });
 
                     marker.addListener('click', () => {
-                    mapRef.current.setCenter(marker.getPosition())
-                    infowindow.open(mapRef.current, marker)
-                    setSelectedItem(item)
-                    })
+                        mapRef.current.setCenter(marker.getPosition());
+                        infowindow.open(mapRef.current, marker);
+                        setSelectedItem(item);
+
+                        setTimeout(() => {
+                            const btn = document.getElementById(`add-button-${item.id}`);
+                            if (btn) {
+                                btn.addEventListener('click', () => {
+                                    if (!routeItems.find((i) => i.id === item.id)) {
+                                        const confirmAdd = window.confirm('이 항목을 추가하시겠습니까?');
+                                        if (confirmAdd) {
+                                            setRouteItems((prev) => [...prev, item]);
+                                        }
+                                    } else {
+                                        alert('이미 추가된 항목입니다.');
+                                    }
+                                });
+                            }
+                        }, 0); 
+                    });
 
                     markersRef.current.push(marker)
                 }
@@ -130,14 +154,38 @@ export default function MapViewer({ items, setSelectedItem }) {
             })
 
             const infowindow = new naver.maps.InfoWindow({
-                content: `<div style="padding:5px;font-size:14px;">${name}<br/>${location}</div>`
-            })
+                content: `
+                    <div style="display:flex;flex-direction:column;padding:5px;font-size:14px;">
+                        <p>${name}</p>
+                        <p>${location}</p>
+                        <button id="add-button-${item.id}" style="margin-top:5px;padding:5px 10px;font-size:12px;background-color:#3b82f6;color:white;border:none;border-radius:5px;cursor:pointer;">
+                            추가
+                        </button>
+                    </div>
+                `
+            });
 
             marker.addListener('click', () => {
-                mapRef.current.setCenter(marker.getPosition())
-                infowindow.open(mapRef.current, marker)
-                setSelectedItem(item)
-            })
+                mapRef.current.setCenter(marker.getPosition());
+                infowindow.open(mapRef.current, marker);
+                setSelectedItem(item);
+
+                setTimeout(() => {
+                    const btn = document.getElementById(`add-button-${item.id}`);
+                    if (btn) {
+                        btn.addEventListener('click', () => {
+                            if (!routeItems.find((i) => i.id === item.id)) {
+                                const confirmAdd = window.confirm('이 항목을 추가하시겠습니까?');
+                                if (confirmAdd) {
+                                    setRouteItems((prev) => [...prev, item]);
+                                }
+                            } else {
+                                alert('이미 추가된 항목입니다.');
+                            }
+                        });
+                    }
+                }, 0); 
+            });
 
             markersRef.current.push(marker)
             }
