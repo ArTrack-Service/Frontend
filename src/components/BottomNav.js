@@ -32,7 +32,7 @@ const BottomNav = ({ activeIndex }) => {
         );
       })}
     </nav>
-  );
+  )
 };
 
 export default BottomNav;
