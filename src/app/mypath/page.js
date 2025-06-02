@@ -1,19 +1,33 @@
 'use client'
+
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '../../components/BottomNav'
 
 export default function My() {
   const router = useRouter()
+  const [paths, setPaths] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  const mockCourse = [
-    {courseID: 'dummy-001'},
-    {courseID: 'dummy-002'},
-    {courseID: 'dummy-003'},
-    {courseID: 'dummy-004'},
-    {courseID: 'dummy-005'},
-    {courseID: 'dummy-006'},
-    {courseID: 'dummy-007'},
-   ]
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch('https://api.artrack.moveto.kr/api/v1/course/')
+        if (!res.ok) throw new Error('API 요청 실패')
+        const result = await res.json()
+        setPaths(result)
+      } catch (error) {
+        console.error(error.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  if (loading) return <div>로딩 중...</div>
+  if (!paths) return <div>데이터 없음</div>
   
   return (
     <div className="relative w-full h-screen overflow-hidden flex flex-col">
@@ -31,15 +45,15 @@ export default function My() {
       </div>
 
       <div className="flex-1 overflow-y-auto pb-24 space-y-4">
-        {mockCourse.map((course, idx) => (
-          <div key={course.courseID}
+        {paths.map((path, idx) => (
+          <div key={path.id}
                className="flex gap-3 items-center bg-white rounded-xl shadow-md p-4 mb-4 cursor-pointer hover:shadow-lg transition-shadow" 
-               onClick={()=>router.push("/mypath/path")}>
+               onClick={()=>router.push(`/mypath/path?path=${encodeURIComponent(JSON.stringify(path))}`)}>
             <div className="flex-1">
               <div className="flex items-center gap-1">
-                <h4 className="font-semibold text-base">산책 코스 {idx + 1}</h4>
+                <h4 className="font-semibold text-base">{path.name}</h4>
               </div>
-              <p className="text-sm text-gray-500">{course.courseID}</p>
+              <p className="text-sm text-gray-500">{path.description}</p>
             </div>
           </div>
         ))}

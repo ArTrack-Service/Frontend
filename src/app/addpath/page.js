@@ -72,7 +72,7 @@ function SortableItem({ item, onRemove }) {
             setRouteItems(newItems)
         }
     }
-
+    
     return (
         <div className="p-4 space-y-4 pb-20">
             <h1 className="text-2xl mt-10 mb-5 font-bold">나의 예술 산책 경로</h1>

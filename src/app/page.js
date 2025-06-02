@@ -55,6 +55,9 @@ export default function Home() {
         localStorage.setItem('routeItems', JSON.stringify(routeItems))
     }, [routeItems])
 
+
+    
+
     return (
         <div className="relative w-full h-screen overflow-hidden flex flex-col">
             {/* 검색창 */}

@@ -51,7 +51,7 @@ export default function Recommend() {
       <input
           type="submit"
           value="시작"
-          className="w-24 h-24 mt-6 mx-auto rounded-full bg-blue-500 text-white text-lg font-bold hover:bg-emerald-600 transition"
+          className="w-24 h-24 mt-6 mx-auto rounded-full bg-blue-500 text-white text-lg font-bold hover:bg-blue-600 transition"
         />
     </form>
     <BottomNav activeIndex={1}/>

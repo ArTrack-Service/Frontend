@@ -1,40 +1,40 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 
 export default function PathList() {
   const router = useRouter()
 
-  const [paths, setPaths] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [paths, setPaths] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('https://api.artrack.moveto.kr/api/v1/course/');
-        if (!res.ok) throw new Error('API 요청 실패');
-        const result = await res.json();
-        setPaths(result);
+        const res = await fetch('https://api.artrack.moveto.kr/api/v1/course/')
+        if (!res.ok) throw new Error('API 요청 실패')
+        const result = await res.json()
+        setPaths(result)
       } catch (error) {
-        console.error(error.message);
+        console.error(error.message)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
     fetchData();
   }, []);
 
-  if (loading) return <div>로딩 중...</div>;
-  if (!paths) return <div>데이터 없음</div>;
+  if (loading) return <div>로딩 중...</div>
+  if (!paths) return <div>데이터 없음</div>
 
   return (
     <div className="relative w-full h-screen overflow-hidden flex flex-col">
       <div className="relative p-4 pb-2 rounded-md shadow-md">
         {/* 뒤로가기 아이콘 */}
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/recommend")}
           className="absolute top-4 left-4 text-gray-500 hover:text-gray-700"
         >
           <ChevronLeft className="w-6 h-6" />
