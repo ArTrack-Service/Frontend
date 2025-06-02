@@ -2,40 +2,31 @@
 
 import { useEffect, useRef } from 'react'
 
-export default function MapWithRoute({ routeItems = [] }) {
-  const mapRef = useRef(null)
-  const mapInstanceRef = useRef(null)
+export default function MapWithRoute({ routeItems }) {
+    const mapRef = useRef(null)
+    
+    useEffect(() => {
+        const loadMap = async () => {
+            const map = new window.naver.maps.Map(mapRef.current, {
+                center: new window.naver.maps.LatLng(37.5665, 126.9780),
+                zoom: 12,
+            })
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.naver) return
-    if (!mapRef.current || !routeItems || routeItems.length === 0) return
-
-    // 초기 지도 렌더링 (한 번만 실행)
-    if (!mapInstanceRef.current) {
-      mapInstanceRef.current = new window.naver.maps.Map(mapRef.current, {
-        center: new window.naver.maps.LatLng(37.5665, 126.9780),
-        zoom: 12,
-      })
-    }
-
-    const map = mapInstanceRef.current
-
-    // 모든 좌표 변환 후 마커/경로 생성
-    Promise.all(
-      routeItems.map(item =>
-        new Promise(resolve => {
-          naver.maps.Service.geocode({ address: item.location }, (status, response) => {
-            if (status === naver.maps.Service.Status.OK) {
-              const { x, y } = response.v2.addresses[0]
-              resolve({ item, latlng: new naver.maps.LatLng(y, x) })
-            } else {
-              resolve(null)
-            }
-          })
-        })
-      )
-    ).then(points => {
-      const validPoints = points.filter(p => p !== null)
+            const positions = await Promise.all(
+                routeItems.map(item =>
+                    new Promise((resolve) => {
+                        naver.maps.Service.geocode({ address: item.address }, (status, response) => {
+                            if (status === naver.maps.Service.Status.OK) {
+                                const result = response.v2.addresses[0]
+                                const latlng = new naver.maps.LatLng(result.y, result.x)
+                                resolve({ latlng, item })
+                            } else {
+                                resolve(null)
+                            }
+                        })
+                    })
+                )
+            )
 
       validPoints.forEach(({ latlng }, idx) => {
         new naver.maps.Marker({
