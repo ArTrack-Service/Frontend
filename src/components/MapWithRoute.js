@@ -6,8 +6,6 @@ export default function MapWithRoute({ routeItems }) {
     const mapRef = useRef(null)
     
     useEffect(() => {
-        if (typeof window === 'undefined' || !window.naver || !routeItems || routeItems.length === 0) return
-
         const loadMap = async () => {
             const map = new window.naver.maps.Map(mapRef.current, {
                 center: new window.naver.maps.LatLng(37.5665, 126.9780),
@@ -17,7 +15,7 @@ export default function MapWithRoute({ routeItems }) {
             const positions = await Promise.all(
                 routeItems.map(item =>
                     new Promise((resolve) => {
-                        naver.maps.Service.geocode({ address: item.location }, (status, response) => {
+                        naver.maps.Service.geocode({ address: item.address }, (status, response) => {
                             if (status === naver.maps.Service.Status.OK) {
                                 const result = response.v2.addresses[0]
                                 const latlng = new naver.maps.LatLng(result.y, result.x)

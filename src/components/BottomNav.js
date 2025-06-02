@@ -3,14 +3,14 @@ import Link from "next/link";
 
 const BottomNav = ({ activeIndex }) => {
   const menu = [
-    { icon: Home, label: "홈", href: "/" },
+    { icon: Home, label: "홈", href: "/home" },
     { icon: MapPin, label: "추천 경로", href: "/recommend" },
     { icon: PlusCircle, label: "경로 추가", href: "/addpath" },
     { icon: User, label: "마이 경로", href: "/mypath" },
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full bg-white z-50 flex justify-around py-3">
+    <nav className="fixed bottom-0 w-full bg-white z-2000 flex justify-around py-3">
       {menu.map((item, index) => {
         const Icon = item.icon;
         const isActive = activeIndex === index;

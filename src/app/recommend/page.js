@@ -7,7 +7,7 @@ export default function Recommend() {
   const [lon, setLon] = useState('')
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && navigator.geolocation) {
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setLat(pos.coords.latitude)
