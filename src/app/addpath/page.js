@@ -152,19 +152,11 @@ export default function RoutePreviewPage() {
             </DndContext>
 
             {/* 추가하기 버튼 */}
-            <div className="pt-4">
-                <button
-                    onClick={() => router.push('/home')}
-                    className="w-full bg-blue-600 text-white py-2 rounded shadow hover:bg-blue-700 transition"
-                >
-                    작품 추가하기
-                </button>
-            </div>
 
             <div className="pt-4">
                 <button
                     onClick={() => setShowDialog(true)}
-                    className="w-full bg-indigo-500 text-white py-2 rounded shadow hover:bg-indigo-600 transition"
+                    className="w-full bg-blue-500 text-white py-2 rounded shadow hover:bg-blue-600 transition"
                 >
                     경로 추가하기
                 </button>

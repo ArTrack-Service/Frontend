@@ -5,12 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { ChevronLeft, GripVertical, X } from 'lucide-react'
 import QRCodeWrapper from '@/components/QRcode'
-import { Monomaniac_One } from 'next/font/google'
 
 const MapViewer = dynamic(() => import('@/components/MapViewer'), { ssr: false })
 const MapWithRoute = dynamic(() => import('@/components/MapWithRoute'), { ssr: false })
 
 export default function MyPath() {
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   const searchParams = useSearchParams()
   const [path, setPath] = useState({ name: '', description: '' })
   const [isEdit, setIsEdit] = useState(false)
@@ -20,6 +20,14 @@ export default function MyPath() {
   const [routeItems, setRouteItems] = useState([])
   const [originalItems, setOriginalItems] = useState([])
   const router = useRouter()
+
+  const categoriesMap = {
+    '전체': '전체',
+    'publicArt': '공공미술',
+    'gallery': '갤러리',
+    'sculpture': '조각',
+    'statue': '동상',
+  }
 
   useEffect(() => {
     const pathString = searchParams.get('path')
@@ -36,11 +44,9 @@ export default function MyPath() {
       const results = []
       for (const point of parsedPath.points) {
         try {
-          const res = await fetch(`https://api.artrack.moveto.kr/api/v1/artwork/${point}`)
+          const res = await fetch(`${BASE_URL}/artwork/${point}`)
           if (!res.ok) throw new Error('API 요청 실패')
           const result = await res.json()
-          result.location = result.address
-          result.category = result.type
           results.push(result)
         } catch (error) {
           console.error(error.message)
@@ -81,7 +87,7 @@ export default function MyPath() {
     }
 
     try {
-      const res = await fetch('https://api.artrack.moveto.kr/api/v1/course', {
+      const res = await fetch(`${BASE_URL}/course`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +114,7 @@ export default function MyPath() {
         <button onClick={() => router.back()} className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">
           <ChevronLeft className="w-6 h-6" />
         </button>
-        <div className="pl-10 pr-10 flex justify-between items-center">
+        <div className="pl-10 pr-10 flex flex-row justify-between items-center">
           {isEdit ? (
             <>
               <input
@@ -117,24 +123,19 @@ export default function MyPath() {
                 onChange={e => setName(e.target.value)}
                 className="text-lg font-semibold text-gray-800 border rounded px-2 py-1"
               />
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-1 text-sm">
+              <label className="inline-flex items-center cursor-pointer ml-4">
+                <span className="mr-2 text-sm text-gray-700">공유</span>
+                <div className="relative">
                   <input
-                    type="radio"
-                    name="share"
-                    checked={share === true}
-                    onChange={() => setShare(true)}
-                  /> 공유함
-                </label>
-                <label className="flex items-center gap-1 text-sm">
-                  <input
-                    type="radio"
-                    name="share"
-                    checked={share === false}
-                    onChange={() => setShare(false)}
-                  /> 공유 안 함
-                </label>
-              </div>
+                    type="checkbox"
+                    checked={share}
+                    onChange={(e) => setShare(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:bg-blue-600" />
+                  <div className="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition peer-checked:translate-x-full" />
+                </div>
+              </label>
             </>
           ) : (
             <>
@@ -166,12 +167,24 @@ export default function MyPath() {
               <div className="w-4 text-gray-500 cursor-grab">
                 {isEdit && <GripVertical className="w-4 h-4" />}
               </div>
-              <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                <img src={artwork.image} alt={artwork.name} className="w-full h-full object-cover rounded-md" loading="lazy" />
+              <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
+                {artwork.image ? (
+                  <img
+                    src={artwork.image}
+                    alt={artwork.name}
+                    className="w-full h-full object-cover rounded-md"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 text-sm">
+                    이미지
+                  </div>
+                )}
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-800">{artwork.name}</h4>
-                <p className="text-sm text-gray-500">{artwork.description}</p>
+                <h4 className="font-semibold text-base">{artwork.name}</h4>
+                <p className="text-sm text-gray-500">{artwork.address}</p>
+                <p className="text-xs text-blue-400 mt-0.5"># {categoriesMap[artwork.type]}</p>
               </div>
               {isEdit && (
                 <button
@@ -193,7 +206,7 @@ export default function MyPath() {
           <div className="mb-6">
             <p className="text-sm font-medium text-gray-700 mb-2">메모</p>
             <textarea
-              className='w-full h-40 overflow-y-auto border rounded p-2 text-sm'
+              className='w-full h-40 overflow-y-auto shadow-lg border rounded p-2 text-sm'
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
             />
@@ -240,7 +253,7 @@ export default function MyPath() {
         <div>
           <div className="mb-6">
             <p className="text-sm font-medium text-gray-700 mb-2">메모</p>
-            <p className='w-full h-40 overflow-y-auto border rounded p-2 text-sm'>{memo}</p>
+            <p className='w-full h-40 overflow-y-auto shadow-lg rounded p-2 text-sm'>{memo}</p>
           </div>
           <div className="pt-4">
             <button

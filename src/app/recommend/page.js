@@ -27,6 +27,7 @@ export default function Recommend() {
         <p className="text-sm text-gray-500">원하는 조건을 선택하고 시작을 눌러주세요</p>
       </div>
       <form method='get' action="/recommend/recpaths" className='flex flex-col'>
+        <input type="hidden" name="lat" value={lat} />
         <input type="hidden" name="lon" value={lon} />
         <div className="flex flex-col mb-6">
           <label htmlFor='Time' className="text-sm font-medium text-gray-700 mb-2">시간</label>

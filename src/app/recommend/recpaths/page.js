@@ -1,18 +1,25 @@
 'use client'
-import { useRouter } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 export default function PathList() {
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [paths, setPaths] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const lat = searchParams.get('lat')
+    const lon = searchParams.get('lon')
+    const time = searchParams.get('time')
+    const items = searchParams.get('itmes')
+
     const fetchData = async () => {
       try {
-        const res = await fetch('https://api.artrack.moveto.kr/api/v1/course/')
+        const res = await fetch(`${BASE_URL}/course?lat=${lat}?lon=${lon}?time=${time}?items=${items}`)
         if (!res.ok) throw new Error('API 요청 실패')
         const result = await res.json()
         setPaths(result)
@@ -30,7 +37,7 @@ export default function PathList() {
   if (!paths) return <div>데이터 없음</div>
 
   return (
-    <div className="relative w-full h-screen overflow-hidden flex flex-col">
+    <div className="relative w-full h-screen overflow-hidden flex flex-col px-4 py-5">
       <div className="relative p-4 pb-2 rounded-md shadow-md">
         {/* 뒤로가기 아이콘 */}
         <button

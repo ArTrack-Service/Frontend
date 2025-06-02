@@ -10,6 +10,7 @@ const MapViewer = dynamic(() => import('@/components/MapViewer'), { ssr: false }
 const MapWithRoute = dynamic(() => import('@/components/MapWithRoute'), { ssr: false })
 
 export default function RecommendedPath() {
+  const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   const searchParams = useSearchParams()
   const [path, setPath] = useState([])
   const [showDialog, setShowDialog] = useState(false)
@@ -20,6 +21,14 @@ export default function RecommendedPath() {
 
   const router = useRouter()
 
+  const categoriesMap = {
+    '전체': '전체',
+    'publicArt': '공공미술',
+    'gallery': '갤러리',
+    'sculpture': '조각',
+    'statue': '동상',
+  }
+
   const handleSave = async () => {
     const updatedPath = {
       name: title,
@@ -29,7 +38,7 @@ export default function RecommendedPath() {
     }
 
     try {
-      const res = await fetch('https://api.artrack.moveto.kr/api/v1/course', {
+      const res = await fetch(`${BASE_URL}/course`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +72,7 @@ export default function RecommendedPath() {
       const results = []
       for (const point of parsedPath.points) {
         try {
-          const res = await fetch(`https://api.artrack.moveto.kr/api/v1/artwork/${point}`)
+          const res = await fetch(`${BASE_URL}/artwork/${point}`)
           if (!res.ok) throw new Error('API 요청 실패')
           const result = await res.json()
           result.location = result.address
@@ -101,13 +110,27 @@ export default function RecommendedPath() {
         <p className="text-sm font-medium text-gray-700 mb-2">예술작품</p>
         <div className="flex flex-col gap-4 max-h-64 overflow-y-auto">
           {routeItems.map((artwork, idx) => (
-            <div key={idx} className="flex gap-3 items-center bg-white rounded-xl shadow-md p-4 mb-4 cursor-pointer hover:shadow-lg transition-shadow">
+            <div key={idx}
+              className="flex gap-3 items-center bg-white rounded-xl shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow"
+            >
               <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
-                <img src={artwork.image} alt={artwork.name} className="w-full h-full object-cover rounded-md" loading="lazy" />
+                {artwork.image ? (
+                  <img
+                    src={artwork.image}
+                    alt={artwork.name}
+                    className="w-full h-full object-cover rounded-md"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 text-sm">
+                    이미지
+                  </div>
+                )}
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-800">{artwork.name}</h4>
-                <p className="text-sm text-gray-500">{artwork.description}</p>
+                <h4 className="font-semibold text-base">{artwork.name}</h4>
+                <p className="text-sm text-gray-500">{artwork.address}</p>
+                <p className="text-xs text-blue-400 mt-0.5"># {categoriesMap[artwork.type]}</p>
               </div>
             </div>
           ))}

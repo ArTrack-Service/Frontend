@@ -30,7 +30,7 @@ export default function My() {
   if (!paths) return <div>데이터 없음</div>
 
   return (
-    <div className="relative w-full h-screen overflow-hidden flex flex-col p-4git ">
+    <div className="relative w-full h-screen overflow-hidden flex flex-col p-4git p-4">
       <div className="flex items-center gap-3 mb-6 p-4 rounded-md shadow-md">
         <div className="w-24 h-24 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
           <img src="https://picsum.photos/seed/usergit/200/150"
