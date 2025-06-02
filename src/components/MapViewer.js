@@ -193,5 +193,7 @@ export default function MapViewer({ items, setSelectedItem, routeItems, setRoute
         })
     }, [items, setSelectedItem])
 
+    
+
     return <div id="map" className="w-full h-full" style={{ minHeight: '400px' }} />
 }

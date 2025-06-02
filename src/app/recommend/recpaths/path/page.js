@@ -33,21 +33,19 @@ export default function RecommendedPath() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': ''
         },
+        credentials: 'include',
         body: JSON.stringify(updatedPath)
       })
 
-      if (!res.ok) throw new Error(`서버 오류: ${res.status}`)
+      if (!res.ok) {
+        throw new Error(`서버 오류: ${res.status}`)
+      }
 
       const result = await res.json()
       console.log('저장 성공:', result)
-      alert('경로가 저장되었습니다.')
-      setPath(updatedPath) // 상태 반영
-      setShowDialog(false)
     } catch (error) {
       console.error('저장 실패:', error)
-      alert('저장에 실패했습니다. 다시 시도해주세요.')
     }
   }
 
@@ -95,7 +93,7 @@ export default function RecommendedPath() {
       <div className="mb-6">
         <p className="text-sm font-medium text-gray-700 mb-2">지도</p>
         <div className="w-full h-64 rounded-md overflow-hidden shadow-md">
-          <MapViewer items={routeItems} />
+          <MapWithRoute routeItems={routeItems} />
         </div>
       </div>
 

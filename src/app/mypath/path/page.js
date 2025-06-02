@@ -85,8 +85,8 @@ export default function MyPath() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `` // 일단 토큰 지움
         },
+        credentials: 'include',
         body: JSON.stringify(updatedPath)
       })
 
@@ -96,11 +96,8 @@ export default function MyPath() {
 
       const result = await res.json()
       console.log('저장 성공:', result)
-      alert('경로가 저장되었습니다.')
-      setIsEdit(false)
     } catch (error) {
       console.error('저장 실패:', error)
-      alert('저장에 실패했습니다. 다시 시도해주세요.')
     }
   }
 
@@ -219,7 +216,7 @@ export default function MyPath() {
                 setIsEdit(false)
                 handleSave()
 
-                
+
               }}
 
               className="flex-1 bg-blue-600 text-white py-2 rounded shadow hover:bg-blue-700"
