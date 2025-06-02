@@ -17,18 +17,27 @@ export default function Home() {
     const [selectedItem, setSelectedItem] = useState(null)
     const [showRoutePopup, setShowRoutePopup] = useState(false)
     const [items, setItems] = useState([])
-    const [routeItems, setRouteItems] = useState([])
+    const [routeItems, setRouteItems] = useState(() => {
+    if (typeof window !== 'undefined') {
+        try {
+        const saved = localStorage.getItem('routeItems')
+        return saved ? JSON.parse(saved) : []
+        } catch (e) {
+        console.error('로컬스토리지 읽기 오류:', e)
+        return []
+        }
+    }
+    return []
+    })
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                const saved = localStorage.getItem('routeItems')
-                if (saved) setRouteItems(JSON.parse(saved))
-            } catch (e) {
-                console.error('로컬스토리지 읽기 오류:', e)
-            }
+        if (typeof window === 'undefined') return
+        try {
+            localStorage.setItem('routeItems', JSON.stringify(routeItems))
+        } catch (e) {
+            console.error('localStorage 쓰기 실패:', e)
         }
-    }, [])
+    }, [routeItems])
 
     useEffect(() => {
         const fetchArtworks = async () => {
@@ -71,38 +80,43 @@ export default function Home() {
 
             {/* 모달 팝업 */}
             <Dialog open={showRoutePopup} onClose={() => setShowRoutePopup(false)} className="fixed z-30 inset-0 overflow-y-auto">
-                <div className="flex items-center justify-center min-h-screen bg-black/30 p-4">
-                    <Dialog.Panel className="bg-white w-full max-w-md rounded-lg shadow-lg p-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <Dialog.Title className="text-lg font-semibold">추가된 경로</Dialog.Title>
-                            <button onClick={() => setShowRoutePopup(false)}>
-                                <X className="w-5 h-5 text-gray-500" />
+                <div className="flex items-center justify-center min-h-screen bg-black/40 backdrop-blur-sm p-4">
+                    <Dialog.Panel className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
+                        <div className="flex justify-between items-center mb-6 border-b pb-3">
+                            <Dialog.Title className="text-xl font-bold text-gray-800">추가된 경로</Dialog.Title>
+                            <button onClick={() => setShowRoutePopup(false)} className="hover:text-gray-700 transition-colors">
+                                <X className="w-6 h-6 text-gray-400" />
                             </button>
                         </div>
+
                         {routeItems.length === 0 ? (
-                            <p className="text-gray-500 text-sm">추가된 항목이 없습니다.</p>
+                            <p className="text-gray-500 text-sm text-center">추가된 항목이 없습니다.</p>
                         ) : (
-                            <ul className="space-y-2 max-h-[300px] overflow-y-auto">
+                            <ul className="space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                                 {routeItems.map((item) => (
-                                    <li key={item.id} className="flex justify-between items-center border-b pb-2">
+                                    <li
+                                        key={item.id}
+                                        className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex justify-between items-start hover:shadow-sm transition-shadow"
+                                    >
                                         <div>
-                                            <p className="text-sm font-medium">{item.name}</p>
-                                            <p className="text-xs text-gray-500">{item.location}</p>
+                                            <p className="text-sm font-semibold text-gray-800">{item.name}</p>
+                                            <p className="text-xs text-gray-500 mt-1">{item.address}</p>
                                         </div>
                                         <button
                                             onClick={() => {
                                                 if (routeItems.find((i) => i.id === item.id)) {
-                                                    const confirmRemove = window.confirm("이 항목을 삭제하시겠습니까?")
+                                                    const confirmRemove = window.confirm("이 항목을 삭제하시겠습니까?");
                                                     if (confirmRemove) {
-                                                        setRouteItems((prev) => prev.filter((i) => i.id !== item.id))
+                                                        setRouteItems((prev) => prev.filter((i) => i.id !== item.id));
                                                     }
                                                 } else {
-                                                    alert("이미 삭제된 항목입니다.")
+                                                    alert("이미 삭제된 항목입니다.");
                                                 }
                                             }}
-                                            className="text-red-500 text-xs hover:underline"
+                                            className="text-red-500 hover:text-red-600 transition-colors text-sm font-medium"
+                                            title="삭제"
                                         >
-                                            삭제
+                                            <X className="w-4 h-4" />
                                         </button>
                                     </li>
                                 ))}
@@ -111,6 +125,7 @@ export default function Home() {
                     </Dialog.Panel>
                 </div>
             </Dialog>
+
 
             <BottomSheet
                 searchQuery={searchQuery}
