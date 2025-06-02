@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Dialog } from '@headlessui/react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { ChevronLeft, X } from 'lucide-react'
+import { ChartNoAxesColumn, ChevronLeft, X } from 'lucide-react'
 
 const MapViewer = dynamic(() => import('@/components/MapViewer'), { ssr: false })
 const MapWithRoute = dynamic(() => import('@/components/MapWithRoute'), { ssr: false })
@@ -36,7 +36,7 @@ export default function RecommendedPath() {
       points: routeItems.map(item => item.id),
       canShare: share
     }
-
+    console.log(updatedPath)
     try {
       const res = await fetch(`${BASE_URL}/course`, {
         method: 'POST',

@@ -19,6 +19,7 @@ export default function MyPath() {
   const [share, setShare] = useState(false)
   const [routeItems, setRouteItems] = useState([])
   const [originalItems, setOriginalItems] = useState([])
+  const [pathID, setPathID] = useState('')
   const router = useRouter()
 
   const categoriesMap = {
@@ -56,6 +57,7 @@ export default function MyPath() {
       setRouteItems(results)
       setOriginalItems(results)
       setShare(parsedPath.canShare)
+      setPathID(parsedPath.id)
     }
     fetchData()
 
@@ -80,12 +82,13 @@ export default function MyPath() {
 
   const handleSave = async () => {
     const updatedPath = {
+      id: pathID,
+      createdAt: new Date().toISOString(),
       name: name, // 제목 상태값
       description: memo, // 메모 상태값
       points: routeItems.map(item => item.id), // 예술작품 id 리스트
       canShare: share
     }
-
     try {
       const res = await fetch(`${BASE_URL}/course`, {
         method: 'POST',

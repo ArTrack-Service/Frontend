@@ -5,25 +5,16 @@ export default function MapViewer({ items, setSelectedItem, routeItems, setRoute
   const mapRef = useRef(null)
   const markersRef = useRef([])
   const currentPositionRef = useRef(null)
-   const setLocalStorage = (items) => {
-          try {
-              localStorage.setItem('routeItems', JSON.stringify(items))
-          } catch (e) {
-              console.error('로컬스토리지 쓰기 오류:', e)
-          }
-      }
 
-  // localStorage에서 캐시된 좌표 불러오기
   const loadGeocodedCache = () => {
     if (typeof window === 'undefined') return {}
-    try {
-      return JSON.parse(localStorage.getItem('geocodedData')) || {}
-    } catch (e) {
-      return {}
-    }
+        try {
+        return JSON.parse(localStorage.getItem('geocodedData')) || {}
+        } catch (e) {
+        return {}
+        }
   }
 
-  // localStorage에 좌표 캐시 저장
   const saveGeocodedCache = (cache) => {
     localStorage.setItem('geocodedData', JSON.stringify(cache))
   }
@@ -101,7 +92,6 @@ export default function MapViewer({ items, setSelectedItem, routeItems, setRoute
   const renderMarkers = async (data) => {
     if (!mapRef.current || !window.naver) return
 
-    // 기존 마커 제거
     markersRef.current.forEach(marker => marker.setMap(null))
     markersRef.current = []
 
@@ -118,7 +108,6 @@ export default function MapViewer({ items, setSelectedItem, routeItems, setRoute
           if (status === naver.maps.Service.Status.OK && response.result.items.length > 0) {
             const point = response.result.items[0].point
             const latLng = new naver.maps.LatLng(point.y, point.x)
-            // 캐시에 저장
             cache[item.id] = { lat: point.y, lng: point.x }
             resolve({ item, latLng })
           } else {
@@ -152,7 +141,7 @@ export default function MapViewer({ items, setSelectedItem, routeItems, setRoute
             </div>
         `,
         maxWidth: 250,
-        disableAutoPan: false, // 지도 중심 자동 이동 허용
+        disableAutoPan: false,
         borderWidth: 0,
         backgroundColor: "#fff"
         })
@@ -169,7 +158,6 @@ export default function MapViewer({ items, setSelectedItem, routeItems, setRoute
               if (!routeItems.find(i => i.id === item.id)) {
                 const confirmAdd = window.confirm('이 항목을 추가하시겠습니까?')
                 if (confirmAdd) {
-                  setLocalStorage([...routeItems, item])
                   setRouteItems(prev => [...prev, item])
                    
                 }
