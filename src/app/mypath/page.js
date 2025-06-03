@@ -46,19 +46,37 @@ export default function MyPage() {
   if (loading) return <div>로딩 중...</div>
   if (!paths) return <div>데이터 없음</div>
 
+  const logout = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/auth/sign-out`, {
+        method: 'POST',
+        credentials: 'include'
+      })
+
+      if (!res.ok) {
+        throw new Error(`서버 오류: ${res.status}`)
+      }
+
+      const result = await res.json()
+      console.log('로그아웃 성공:', result)
+    } catch (error) {
+      console.error('로그 아웃 실패:', error)
+    }
+  }
+
   return (
     <div className="relative w-full h-screen overflow-hidden flex flex-col p-4git p-4">
       <div className="flex items-center gap-3 mb-6 p-4 rounded-md shadow-md">
         <div className="w-24 h-24 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
-          <UserRound className='w-full h-full'/> 
+          <UserRound className='w-full h-full' />
         </div>
         <div className="flex-1">
-          {user?(
+          {user ? (
             <>
               <h4 className="font-semibold text-base">{user.username}</h4>
               <p className="text-sm text-gray-500">✉️ {user.email}</p>
             </>
-            
+
           ) : (
             <>
               <h4 className="font-semibold text-base">사용자</h4>
@@ -67,6 +85,12 @@ export default function MyPage() {
           )
           }
         </div>
+        <button
+          onClick={logout}
+          className="ml-4 px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+        >
+          로그아웃
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-24 space-y-4">
