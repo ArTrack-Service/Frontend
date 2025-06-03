@@ -4,17 +4,88 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { ChevronLeft, GripVertical, Trash2, QrCode, X } from 'lucide-react'
+import { ChevronLeft, Trash2, QrCode, X } from 'lucide-react'
 import { Dialog } from '@headlessui/react'
+
+import {
+  DndContext,
+  closestCenter
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
 import QRCodeWrapper from '@/components/QRcode'
 
+// 지도를 클라이언트 전용으로 로드
 const MapWithRoute = dynamic(() => import('../../../components/MapWithRoute'), { ssr: false })
+
+// SortableItem: 각 리스트 항목 하나 
+function SortableItem({ item, onRemove, onClick }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: item.id.toString(),
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    touchAction: 'none', // 모바일 터치 환경에서도 드래그가 되도록
+  }
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition cursor-grab"
+    >
+      {/* 드래그 핸들 */}
+      <div className="w-4 text-gray-400">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-4 h-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 4h4m-4 4h4m-4 4h4m-4 4h4m-4 4h4" />
+        </svg>
+      </div>
+
+      {/* 클릭 시 상세 처리 */}
+      <div
+        onClick={() => onClick(item.id)}
+        className="flex-1 flex flex-col cursor-pointer"
+      >
+        <p className="font-semibold text-gray-800">{item.name}</p>
+        <p className="text-sm text-gray-500 break-words whitespace-normal">
+          {item.address}
+        </p>
+      </div>
+
+      <button
+        onClick={() => onRemove(item.id)}
+        className="text-red-500 hover:text-red-600 transition px-2"
+        aria-label={`삭제 ${item.name}`}
+      >
+        삭제
+      </button>
+    </li>
+  )
+}
+
 
 export default function MyPath() {
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   const searchParams = useSearchParams()
   const router = useRouter()
 
+  // 경로 전체 데이터
   const [path, setPath] = useState({
     id: '',
     name: '',
@@ -25,14 +96,19 @@ export default function MyPath() {
     time: 0,
   })
 
+  // 편집 모드 / 일반 모드
   const [isEdit, setIsEdit] = useState(false)
   const [memo, setMemo] = useState('')
   const [name, setName] = useState('')
   const [share, setShare] = useState(false)
-  const [routeItems, setRouteItems] = useState([])
-  const [originalItems, setOriginalItems] = useState([])
   const [time, setTime] = useState(0)
 
+  // 예술작품 리스트 (상세 정보)
+  const [routeItems, setRouteItems] = useState([])
+  // 편집 취소 시 원본 복구용
+  const [originalItems, setOriginalItems] = useState([])
+
+  // QR 모달 열림/닫힘
   const [showQRModal, setShowQRModal] = useState(false)
 
   const categoriesMap = {
@@ -43,6 +119,7 @@ export default function MyPath() {
     statue: '동상',
   }
 
+  // 1) URL 쿼리에서 path 객체 파싱 + 예술작품 상세 fetch
   useEffect(() => {
     const pathString = searchParams.get('path')
     if (!pathString) {
@@ -56,6 +133,7 @@ export default function MyPath() {
     setShare(parsedPath.canShare || false)
     setTime(parsedPath.time || 0)
 
+    // artwork ID 배열이 있으면, 각 아이디로 상세 정보 가져오기
     if (Array.isArray(parsedPath.points) && parsedPath.points.length > 0) {
       Promise.all(
         parsedPath.points.map(async (pointId) => {
@@ -75,21 +153,20 @@ export default function MyPath() {
     }
   }, [searchParams, BASE_URL, router])
 
-  const handleDragStart = (e, index) => {
-    e.dataTransfer.setData('drag-index', index.toString())
+  // 2) 드래그 종료 시 호출 → 배열 순서 교체
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (!over) return
+    if (active.id !== over.id) {
+      const oldIndex = routeItems.findIndex(i => i.id.toString() === active.id)
+      const newIndex = routeItems.findIndex(i => i.id.toString() === over.id)
+      const newItems = arrayMove(routeItems, oldIndex, newIndex)
+      setRouteItems(newItems)
+    }
   }
-  const handleDrop = (e, dropIndex) => {
-    e.preventDefault()
-    const dragIndex = Number(e.dataTransfer.getData('drag-index'))
-    if (dragIndex === dropIndex) return
-    const updated = [...routeItems]
-    const [dragged] = updated.splice(dragIndex, 1)
-    updated.splice(dropIndex, 0, dragged)
-    setRouteItems(updated)
-  }
-  const handleDragOver = (e) => e.preventDefault()
 
-  const handleSave = async () => {
+  // 3) 저장 (PUT 요청)
+  async function handleSave() {
     const updatedPath = {
       id: path.id,
       createdAt: path.createdAt,
@@ -125,16 +202,18 @@ export default function MyPath() {
     }
   }
 
-  const handleCancel = () => {
+  // 4) 편집 취소
+  function handleCancel() {
     setRouteItems(originalItems)
     setName(path.name)
     setMemo(path.description)
     setShare(path.canShare)
-    setIsEdit(false)
     setTime(path.time)
+    setIsEdit(false)
   }
 
-  const handleDelete = async () => {
+  // 5) 삭제 (DELETE 요청)
+  async function handleDelete() {
     if (!window.confirm('해당 경로를 삭제하시겠습니까?')) return
     try {
       const res = await fetch(`${BASE_URL}/course/${path.id}`, {
@@ -154,8 +233,14 @@ export default function MyPath() {
     }
   }
 
+  // 6) 작품 클릭 시 상세보기 처리 (필요 시 구현)
+  function handleItemClick(artworkId) {
+    router.push(`/artwork/${artworkId}`) // 예시: 상세 페이지로 이동
+  }
+
   return (
     <div className="flex flex-col h-screen bg-gray-100">
+      {/* ─── 헤더 ─── */}
       <div className="bg-white border-b shadow-sm p-4 flex items-center">
         <button
           onClick={() => router.back()}
@@ -166,6 +251,7 @@ export default function MyPath() {
 
         {isEdit ? (
           <div className="flex-1 flex items-center gap-4">
+            {/* 경로 이름 입력 */}
             <input
               type="text"
               value={name}
@@ -173,6 +259,7 @@ export default function MyPath() {
               placeholder="경로 이름 입력"
               className="flex-1 border-b border-gray-300 text-lg font-semibold text-gray-800 px-2 py-1 focus:outline-none focus:border-blue-500"
             />
+            {/* 공유 토글 */}
             <label className="flex items-center gap-2 whitespace-nowrap">
               <span className="text-sm text-gray-700">공유</span>
               <div className="relative inline-block w-11 h-6">
@@ -203,7 +290,9 @@ export default function MyPath() {
         )}
       </div>
 
+      {/* ─── 본문 (스크롤 가능) ─── */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* 지도 섹션 */}
         <section>
           <p className="text-sm font-medium text-gray-700 mb-2">지도</p>
           <div className="w-full h-52 bg-white rounded-lg overflow-hidden shadow-sm">
@@ -211,57 +300,68 @@ export default function MyPath() {
           </div>
         </section>
 
+        {/* 예술작품(드래그/소팅) 섹션 */}
         <section>
           <p className="text-sm font-medium text-gray-700 mb-2">예술작품</p>
-          <div className={`${isEdit ? '' : 'max-h-64 overflow-y-auto'} flex flex-col gap-3`}>
-            {routeItems.map((artwork, idx) => (
-              <div
-                key={artwork.id}
-                className="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition"
-                draggable={isEdit}
-                onDragStart={(e) => handleDragStart(e, idx)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, idx)}
-              >
-                {isEdit && (
-                  <div className="w-4 text-gray-400 cursor-grab">
-                    <GripVertical className="w-4 h-4" />
+          {isEdit ? (
+             <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={routeItems.map((i) => i.id.toString())}
+              strategy={verticalListSortingStrategy}
+            >
+              <ul className={`${isEdit ? '' : 'max-h-64 overflow-y-auto'} flex flex-col gap-3`}>
+                {routeItems.map((artwork) => (
+                  <SortableItem
+                    key={artwork.id}
+                    item={artwork}
+                    onRemove={(id) => {
+                      const filtered = routeItems.filter((i) => i.id !== id)
+                      setRouteItems(filtered)
+                    }}
+                    onClick={handleItemClick}
+                  />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
+          ) : (
+            <ul className="flex flex-col gap-3 max-h-64 overflow-y-auto">
+              {routeItems.map((artwork) => (
+                <li
+                  key={artwork.id}
+                  className="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 cursor-pointer hover:shadow-md transition"
+                  onClick={() => handleItemClick(artwork.id)}
+                >
+                  <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
+                    {artwork.image ? (
+                      <img
+                        src={artwork.image}
+                        alt={artwork.name}
+                        className="w-full h-full object-cover rounded-md"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 text-sm">
+                        이미지 없음
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="w-14 h-14 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                  {artwork.image ? (
-                    <img
-                      src={artwork.image}
-                      alt={artwork.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="text-xs text-gray-400">이미지 없음</div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-800 truncate">{artwork.name}</h4>
-                  <p className="text-sm text-gray-500 truncate">{artwork.address}</p>
-                  <p className="text-xs text-blue-500 mt-0.5">
-                    # {categoriesMap[artwork.type]}
-                  </p>
-                </div>
-                {isEdit && (
-                  <button
-                    onClick={() =>
-                      setRouteItems((prev) => prev.filter((_, i) => i !== idx))
-                    }
-                    className="text-red-500 hover:text-red-600 transition px-2"
-                  >
-                    삭제
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-base">{artwork.name}</h4>
+                    <p className="text-sm text-gray-500">{artwork.address}</p>
+                    <p className="text-xs text-blue-400 mt-0.5"># {categoriesMap[artwork.type]}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+         
         </section>
 
+        {/* 메모 섹션 */}
         <section>
           <p className="text-sm font-medium text-gray-700 mb-2">메모</p>
           {isEdit ? (
@@ -279,6 +379,7 @@ export default function MyPath() {
         </section>
       </div>
 
+      {/* ─── 하단 고정 버튼 ─── */}
       <div className="bg-white border-t shadow-inner p-4 flex items-center justify-between">
         {isEdit ? (
           <>
@@ -314,6 +415,7 @@ export default function MyPath() {
         )}
       </div>
 
+      {/* ─── QR 코드 모달 ─── */}
       <Dialog
         open={showQRModal}
         onClose={() => setShowQRModal(false)}
