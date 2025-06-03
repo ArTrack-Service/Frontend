@@ -1,73 +1,85 @@
-"use client"
+// mypath/path/path.js
+'use client'
 
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { ChevronLeft, GripVertical, X } from 'lucide-react'
+import { ChevronLeft, GripVertical, Trash2, QrCode, X } from 'lucide-react'
+import { Dialog } from '@headlessui/react'
 import QRCodeWrapper from '@/components/QRcode'
 
-const MapViewer = dynamic(() => import('@/components/MapViewer'), { ssr: false })
-const MapWithRoute = dynamic(() => import('@/components/MapWithRoute'), { ssr: false })
+const MapWithRoute = dynamic(() => import('../../../components/MapWithRoute'), { ssr: false })
 
 export default function MyPath() {
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   const searchParams = useSearchParams()
-  const [path, setPath] = useState({ name: '', description: '' })
+  const router = useRouter()
+
+  const [path, setPath] = useState({
+    id: '',
+    name: '',
+    description: '',
+    createdAt: '',
+    points: [],
+    canShare: false,
+    time: 0,
+  })
+
   const [isEdit, setIsEdit] = useState(false)
   const [memo, setMemo] = useState('')
   const [name, setName] = useState('')
   const [share, setShare] = useState(false)
   const [routeItems, setRouteItems] = useState([])
   const [originalItems, setOriginalItems] = useState([])
-  const [pathID, setPathID] = useState('')
-  const router = useRouter()
+  const [time, setTime] = useState(0)
+
+  const [showQRModal, setShowQRModal] = useState(false)
 
   const categoriesMap = {
-    '전체': '전체',
-    'publicArt': '공공미술',
-    'gallery': '갤러리',
-    'sculpture': '조각',
-    'statue': '동상',
+    전체: '전체',
+    publicArt: '공공미술',
+    gallery: '갤러리',
+    sculpture: '조각',
+    statue: '동상',
   }
 
   useEffect(() => {
     const pathString = searchParams.get('path')
-    const parsedPath = pathString ? JSON.parse(decodeURIComponent(pathString)) : null
-    if (parsedPath) {
-      setPath(parsedPath)
-      setMemo(parsedPath.description || '')
-      setName(parsedPath.name || '')
+    if (!pathString) {
+      router.replace('/mypath')
+      return
     }
+    const parsedPath = JSON.parse(decodeURIComponent(pathString))
+    setPath(parsedPath)
+    setName(parsedPath.name || '')
+    setMemo(parsedPath.description || '')
+    setShare(parsedPath.canShare || false)
+    setTime(parsedPath.time || 0)
 
-    if (!parsedPath || !parsedPath.points) return
-
-    const fetchData = async () => {
-      const results = []
-      for (const point of parsedPath.points) {
-        try {
-          const res = await fetch(`${BASE_URL}/artwork/${point}`)
-          if (!res.ok) throw new Error('API 요청 실패')
-          const result = await res.json()
-          results.push(result)
-        } catch (error) {
-          console.error(error.message)
-        }
-      }
-
-      setRouteItems(results)
-      setOriginalItems(results)
-      setShare(parsedPath.canShare)
-      setPathID(parsedPath.id)
+    if (Array.isArray(parsedPath.points) && parsedPath.points.length > 0) {
+      Promise.all(
+        parsedPath.points.map(async (pointId) => {
+          const res = await fetch(`${BASE_URL}/artwork/${pointId}`, {
+            method: 'GET',
+            credentials: 'include',
+          })
+          if (!res.ok) throw new Error('작품 정보 로딩 실패')
+          return res.json()
+        })
+      )
+        .then((results) => {
+          setRouteItems(results)
+          setOriginalItems(results)
+        })
+        .catch((err) => console.error(err))
     }
-    fetchData()
-
-  }, [])
+  }, [searchParams, BASE_URL, router])
 
   const handleDragStart = (e, index) => {
-    e.dataTransfer.setData('drag-index', index)
+    e.dataTransfer.setData('drag-index', index.toString())
   }
-
   const handleDrop = (e, dropIndex) => {
+    e.preventDefault()
     const dragIndex = Number(e.dataTransfer.getData('drag-index'))
     if (dragIndex === dropIndex) return
     const updated = [...routeItems]
@@ -75,200 +87,250 @@ export default function MyPath() {
     updated.splice(dropIndex, 0, dragged)
     setRouteItems(updated)
   }
-
-  const handleDragOver = (e) => {
-    e.preventDefault()
-  }
+  const handleDragOver = (e) => e.preventDefault()
 
   const handleSave = async () => {
     const updatedPath = {
-      id: pathID,
-      createdAt: new Date().toISOString(),
-      name: name, // 제목 상태값
-      description: memo, // 메모 상태값
-      points: routeItems.map(item => item.id), // 예술작품 id 리스트
-      canShare: share
+      id: path.id,
+      createdAt: path.createdAt,
+      name: name.trim(),
+      description: memo.trim(),
+      points: routeItems.map((item) => item.id),
+      canShare: share,
+      time: time,
     }
+
     try {
       const res = await fetch(`${BASE_URL}/course`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: 'PUT',
         credentials: 'include',
-        body: JSON.stringify(updatedPath)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPath),
       })
-
-      if (!res.ok) {
-        throw new Error(`서버 오류: ${res.status}`)
+      if (res.status === 401) {
+        router.replace('/')
+        return
       }
+      if (!res.ok) throw new Error(`서버 오류: ${res.status}`)
 
       const result = await res.json()
-      console.log('저장 성공:', result)
+      setPath(result)
+      setOriginalItems(routeItems)
+      setIsEdit(false)
+      alert('경로가 성공적으로 수정되었습니다.')
+      router.push('/mypath')
     } catch (error) {
       console.error('저장 실패:', error)
+      alert('경로 저장에 실패했습니다.')
     }
   }
 
+  const handleCancel = () => {
+    setRouteItems(originalItems)
+    setName(path.name)
+    setMemo(path.description)
+    setShare(path.canShare)
+    setIsEdit(false)
+    setTime(path.time)
+  }
+
+  const handleDelete = async () => {
+    if (!window.confirm('해당 경로를 삭제하시겠습니까?')) return
+    try {
+      const res = await fetch(`${BASE_URL}/course/${path.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (res.status === 401) {
+        router.replace('/')
+        return
+      }
+      if (!res.ok) throw new Error(`삭제 실패: ${res.status}`)
+      alert('경로가 삭제되었습니다.')
+      router.push('/mypath')
+    } catch (error) {
+      console.error('삭제 실패:', error)
+      alert('경로 삭제에 실패했습니다.')
+    }
+  }
 
   return (
-    <div className="flex flex-col h-screen px-4 py-5 bg-white">
-      <div className="relative p-4 pb-2 rounded-md">
-        <button onClick={() => router.back()} className="absolute top-4 left-4 text-gray-500 hover:text-gray-700">
+    <div className="flex flex-col h-screen bg-gray-100">
+      <div className="bg-white border-b shadow-sm p-4 flex items-center">
+        <button
+          onClick={() => router.back()}
+          className="text-gray-600 hover:text-gray-800 transition mr-4"
+        >
           <ChevronLeft className="w-6 h-6" />
         </button>
-        <div className="pl-10 pr-10 flex flex-row justify-between items-center">
-          {isEdit ? (
-            <>
-              <input
-                type='text'
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="text-lg font-semibold text-gray-800 border rounded px-2 py-1"
-              />
-              <label className="inline-flex items-center cursor-pointer ml-4">
-                <span className="mr-2 text-sm text-gray-700">공유</span>
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={share}
-                    onChange={(e) => setShare(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:bg-blue-600" />
-                  <div className="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition peer-checked:translate-x-full" />
-                </div>
-              </label>
-            </>
-          ) : (
-            <>
-              <h1 className="text-lg font-semibold text-gray-800">{path.name}</h1>
-              {share && <QRCodeWrapper />}
-            </>
-          )}
-        </div>
-      </div>
 
-      <div className="mb-6">
-        <p className="text-sm font-medium text-gray-700 mb-2">지도</p>
-        <div className="w-full h-64 rounded-md overflow-hidden shadow-md">
-          <MapWithRoute routeItems={routeItems} />
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <p className="text-sm font-medium text-gray-700 mb-2">예술작품</p>
-        <div className={`${isEdit ? '' : 'max-h-64 overflow-y-auto'} flex flex-col gap-4`}>
-          {routeItems.map((artwork, idx) => (
-            <div key={idx}
-              className="flex gap-3 items-center bg-white rounded-xl shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow"
-              draggable={isEdit}
-              onDragStart={(e) => handleDragStart(e, idx)}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, idx)}>
-
-              <div className="w-4 text-gray-500 cursor-grab">
-                {isEdit && <GripVertical className="w-4 h-4" />}
+        {isEdit ? (
+          <div className="flex-1 flex items-center gap-4">
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="경로 이름 입력"
+              className="flex-1 border-b border-gray-300 text-lg font-semibold text-gray-800 px-2 py-1 focus:outline-none focus:border-blue-500"
+            />
+            <label className="flex items-center gap-2 whitespace-nowrap">
+              <span className="text-sm text-gray-700">공유</span>
+              <div className="relative inline-block w-11 h-6">
+                <input
+                  type="checkbox"
+                  checked={share}
+                  onChange={(e) => setShare(e.target.checked)}
+                  className="absolute opacity-0 w-0 h-0 peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 rounded-full peer-focus:ring-2 peer-focus:ring-blue-500 transition-colors peer-checked:bg-blue-600"></div>
+                <div className="absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition transform peer-checked:translate-x-full"></div>
               </div>
-              <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
-                {artwork.image ? (
-                  <img
-                    src={artwork.image}
-                    alt={artwork.name}
-                    className="w-full h-full object-cover rounded-md"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 text-sm">
-                    이미지
+            </label>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-between">
+            <h1 className="text-lg font-semibold text-gray-800 truncate">{path.name}</h1>
+            {share && (
+              <button
+                onClick={() => setShowQRModal(true)}
+                className="ml-4 text-gray-600 hover:text-gray-800 transition"
+                title="QR 코드 보기"
+              >
+                <QrCode className="w-6 h-6" />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <section>
+          <p className="text-sm font-medium text-gray-700 mb-2">지도</p>
+          <div className="w-full h-52 bg-white rounded-lg overflow-hidden shadow-sm">
+            <MapWithRoute routeItems={routeItems} />
+          </div>
+        </section>
+
+        <section>
+          <p className="text-sm font-medium text-gray-700 mb-2">예술작품</p>
+          <div className={`${isEdit ? '' : 'max-h-64 overflow-y-auto'} flex flex-col gap-3`}>
+            {routeItems.map((artwork, idx) => (
+              <div
+                key={artwork.id}
+                className="bg-white rounded-lg shadow-sm p-3 flex items-center gap-3 hover:shadow-md transition"
+                draggable={isEdit}
+                onDragStart={(e) => handleDragStart(e, idx)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, idx)}
+              >
+                {isEdit && (
+                  <div className="w-4 text-gray-400 cursor-grab">
+                    <GripVertical className="w-4 h-4" />
                   </div>
                 )}
+                <div className="w-14 h-14 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                  {artwork.image ? (
+                    <img
+                      src={artwork.image}
+                      alt={artwork.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="text-xs text-gray-400">이미지 없음</div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-800 truncate">{artwork.name}</h4>
+                  <p className="text-sm text-gray-500 truncate">{artwork.address}</p>
+                  <p className="text-xs text-blue-500 mt-0.5">
+                    # {categoriesMap[artwork.type]}
+                  </p>
+                </div>
+                {isEdit && (
+                  <button
+                    onClick={() =>
+                      setRouteItems((prev) => prev.filter((_, i) => i !== idx))
+                    }
+                    className="text-red-500 hover:text-red-600 transition px-2"
+                  >
+                    삭제
+                  </button>
+                )}
               </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-base">{artwork.name}</h4>
-                <p className="text-sm text-gray-500">{artwork.address}</p>
-                <p className="text-xs text-blue-400 mt-0.5"># {categoriesMap[artwork.type]}</p>
-              </div>
-              {isEdit && (
-                <button
-                  onClick={() => {
-                    setRouteItems(prev => prev.filter((_, i) => i !== idx))
-                  }}
-                  className="text-red-600 text-sm font-medium hover:text-red-800 transition"
-                >
-                  제거
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </section>
 
-      {isEdit ? (
-        <div>
-          <div className="mb-6">
-            <p className="text-sm font-medium text-gray-700 mb-2">메모</p>
+        <section>
+          <p className="text-sm font-medium text-gray-700 mb-2">메모</p>
+          {isEdit ? (
             <textarea
-              className='w-full h-40 overflow-y-auto shadow-lg border rounded p-2 text-sm'
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
+              className="w-full h-32 border rounded-lg p-2 text-sm shadow-inner resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="메모를 입력하세요"
             />
-          </div>
-          <div className="flex gap-4 pt-4">
+          ) : (
+            <div className="w-full h-32 border rounded-lg p-3 text-sm bg-white shadow-inner overflow-y-auto">
+              {memo || '메모가 없습니다.'}
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="bg-white border-t shadow-inner p-4 flex items-center justify-between">
+        {isEdit ? (
+          <>
             <button
-              onClick={() => {
-                // 새 path 객체 구성
-                const updatedPath = {
-                  ...path,
-                  name: name, // 사용자 입력으로 변경된 제목
-                  description: memo, // 사용자 입력으로 변경된 메모
-                  points: routeItems.map(item => item.id), // 순서 반영된 예술작품 ID 목록
-                  canShare: share // 공유할지 여부
-                }
-
-                // 상태 업데이트
-                setPath(updatedPath)
-                setOriginalItems(routeItems) // 원본도 갱신 (취소 시 이 상태로 복원됨)
-                setIsEdit(false)
-                handleSave()
-
-
-              }}
-
-              className="flex-1 bg-blue-600 text-white py-2 rounded shadow hover:bg-blue-700"
+              onClick={handleSave}
+              className="flex-1 mr-2 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
             >
               저장하기
             </button>
             <button
-              onClick={() => {
-                setRouteItems(originalItems)
-                setName(path.name)
-                setMemo(path.description)
-                setIsEdit(false)
-              }}
-              className="flex-1 bg-red-600 text-white py-2 rounded shadow hover:bg-gray-400"
+              onClick={handleCancel}
+              className="flex-1 ml-2 bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400 transition"
             >
               취소하기
             </button>
-          </div>
-        </div>
-      ) : (
-        <div>
-          <div className="mb-6">
-            <p className="text-sm font-medium text-gray-700 mb-2">메모</p>
-            <p className='w-full h-40 overflow-y-auto shadow-lg rounded p-2 text-sm'>{memo}</p>
-          </div>
-          <div className="pt-4">
+          </>
+        ) : (
+          <>
             <button
               onClick={() => setIsEdit(true)}
-              className="w-full bg-blue-600 text-white py-2 rounded shadow hover:bg-blue-700"
+              className="flex-1 mr-2 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
             >
               수정하기
             </button>
+            <button
+              onClick={handleDelete}
+              className="flex-1 ml-2 bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition flex items-center justify-center gap-1"
+            >
+              <Trash2 className="w-5 h-5" />
+              삭제하기
+            </button>
+          </>
+        )}
+      </div>
+
+      <Dialog
+        open={showQRModal}
+        onClose={() => setShowQRModal(false)}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      >
+        <Dialog.Panel className="bg-white rounded-lg p-6 shadow-lg max-w-sm w-full">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-800">QR 코드</h2>
+            <button onClick={() => setShowQRModal(false)} className="text-gray-500 hover:text-gray-700">
+              <X className="w-5 h-5" />
+            </button>
           </div>
-        </div>
-      )}
-      <div className="h-16" />
+          <div className="flex justify-center">
+            <QRCodeWrapper value={JSON.stringify(path)} />
+          </div>
+        </Dialog.Panel>
+      </Dialog>
     </div>
   )
 }

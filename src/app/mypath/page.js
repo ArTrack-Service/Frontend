@@ -8,17 +8,39 @@ import { UserRound } from 'lucide-react'
 export default function MyPage() {
   const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   const router = useRouter()
-  const [paths, setPaths] = useState(null)
+  const [paths, setPaths] = useState([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndPaths = async () => {
       try {
-        let res = await fetch(`${BASE_URL}/auth`)
-        if (!res.ok) throw new Error('API 요청 실패')
-        let result = await res.json()
-        setUser(result)
+        const userRes = await fetch(`${BASE_URL}/auth`, {
+          method: 'GET',
+          credentials: 'include',
+        })
+        if (userRes.status === 401) {
+          router.replace('/')
+          return
+        }
+        if (!userRes.ok) throw new Error('사용자 정보 로딩 실패')
+        const userJson = await userRes.json()
+        const currentUser = userJson.user ?? userJson
+        setUser(currentUser)
+
+        const pathsRes = await fetch(`${BASE_URL}/course`, {
+          method: 'GET',
+          credentials: 'include',
+        })
+        if (pathsRes.status === 401) {
+          router.replace('/')
+          return
+        }
+        if (!pathsRes.ok) throw new Error('경로 목록 로딩 실패')
+        const allPaths = await pathsRes.json()
+
+        const myPaths = allPaths.filter((p) => p.userId === currentUser.id)
+        setPaths(myPaths)
       } catch (error) {
         console.error(error.message)
       } finally {
@@ -26,91 +48,87 @@ export default function MyPage() {
       }
     }
 
-    const fetchData = async () => {
-      try {
-        let res = await fetch(`${BASE_URL}/course`)
-        if (!res.ok) throw new Error('API 요청 실패')
-        let result = await res.json()
-        setPaths(result)
-      } catch (error) {
-        console.error(error.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchUser()
-    fetchData()
-  }, [])
-
-  if (loading) return <div>로딩 중...</div>
-  if (!paths) return <div>데이터 없음</div>
+    fetchUserAndPaths()
+  }, [BASE_URL, router])
 
   const logout = async () => {
     try {
       const res = await fetch(`${BASE_URL}/auth/sign-out`, {
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include',
       })
-
-      if (!res.ok) {
-        throw new Error(`서버 오류: ${res.status}`)
-      }
-
-      const result = await res.json()
-      console.log('로그아웃 성공:', result)
+      if (!res.ok) throw new Error(`서버 오류: ${res.status}`)
+      router.replace('/')
     } catch (error) {
-      console.error('로그 아웃 실패:', error)
+      console.error('로그아웃 실패:', error)
+      alert('로그아웃 중 오류가 발생했습니다.')
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-gray-500">로딩 중...</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="relative w-full h-screen overflow-hidden flex flex-col p-4git p-4">
-      <div className="flex items-center gap-3 mb-6 p-4 rounded-md shadow-md">
-        <div className="w-24 h-24 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
-          <UserRound className='w-full h-full' />
+    <div className="relative w-full h-screen flex flex-col bg-gray-50">
+      <div className="flex items-center gap-4 p-4 bg-white shadow-md">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+          <UserRound className="w-8 h-8" />
         </div>
         <div className="flex-1">
           {user ? (
             <>
-              <h4 className="font-semibold text-base">{user.username}</h4>
+              <h4 className="font-semibold text-lg text-gray-800">{user.username}</h4>
               <p className="text-sm text-gray-500">✉️ {user.email}</p>
             </>
-
           ) : (
             <>
-              <h4 className="font-semibold text-base">사용자</h4>
+              <h4 className="font-semibold text-lg text-gray-800">사용자</h4>
               <p className="text-sm text-gray-500">✉️ 이메일</p>
             </>
-          )
-          }
+          )}
         </div>
         <button
           onClick={logout}
-          className="ml-4 px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
         >
           로그아웃
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-24 space-y-4">
-        {paths.map((path, idx) => (
-          <div key={path.id}
-            className="flex gap-3 items-center bg-white rounded-xl shadow-md p-4 mb-4 cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => router.push(`/mypath/path?path=${encodeURIComponent(JSON.stringify(path))}`)}>
-            <div className="flex-1">
-              <div className="flex items-center gap-1">
-                <h4 className="font-semibold text-base">{path.name}</h4>
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {paths.length > 0 ? (
+          paths.map((path) => (
+            <div
+              key={path.id}
+              className="bg-white rounded-xl shadow hover:shadow-lg transition p-4 cursor-pointer"
+              onClick={() =>
+                router.push(
+                  `/mypath/path?path=${encodeURIComponent(JSON.stringify(path))}`
+                )
+              }
+            >
+              <div className="flex justify-between items-center mb-1">
+                <h4 className="font-semibold text-gray-800 text-base">{path.name}</h4>
+                <span className="text-xs text-gray-500">
+                  {path.time ? `${Math.floor(path.time / 60)}시간 ${path.time % 60}분` : ''}
+                </span>
               </div>
-              <p className="text-sm text-gray-500">{path.description}</p>
+              <p className="text-sm text-gray-600">{path.description}</p>
             </div>
-          </div>
-        ))}
-      </div>
-      <div className='fixed bottom-0 left-0 right-0 gb-white shadow-lg'>
-        <BottomNav activeIndex={3} />
+          ))
+        ) : (
+          <p className="text-center text-gray-500">등록된 경로가 없습니다.</p>
+        )}
       </div>
 
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t">
+        <BottomNav activeIndex={3} />
+      </div>
     </div>
   )
 }

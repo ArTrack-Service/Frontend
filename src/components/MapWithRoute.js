@@ -5,7 +5,6 @@ export default function MapWithRoute({ routeItems }) {
   const mapRef = useRef(null)
 
   useEffect(() => {
-    // SDK가 없는 경우 로드
     if (!window.naver && !document.getElementById('naver-map-sdk')) {
       const script = document.createElement('script')
       script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID}&submodules=geocoder`

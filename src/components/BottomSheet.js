@@ -212,7 +212,7 @@ export default function BottomSheet({
                                         onClick={() => setSelectedItem(item)}
                                         className="flex items-center gap-3 flex-1"
                                     >
-                                        <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
+                                        <div className="w-16 h-16 min-w-16 min-h-16 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-500 overflow-hidden">
                                             {item.image ? (
                                                 <img
                                                     src={item.image}
