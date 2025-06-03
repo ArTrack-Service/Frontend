@@ -17,6 +17,7 @@ export default function RecommendedPath() {
   const [memo, setMemo] = useState('')
   const [title, setTitle] = useState('')
   const [share, setShare] = useState(false)
+  const [time, setTime] = useState(0)
   const [routeItems, setRouteItems] = useState([])
 
   const router = useRouter()
@@ -34,7 +35,8 @@ export default function RecommendedPath() {
       name: title,
       description: memo,
       points: routeItems.map(item => item.id),
-      canShare: share
+      canShare: share,
+      time: time,
     }
     console.log(updatedPath)
     try {
