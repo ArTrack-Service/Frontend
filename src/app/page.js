@@ -35,6 +35,9 @@ export default function LandingPage() {
       return <div className="text-center mt-20 text-xl">로딩 중...</div>;
     }
 
+
+    
+
     return (
       <main className="flex flex-col items-center justify-center min-h-screen">
         <h1 className="text-6xl font-bold mb-20">ArTrack</h1>

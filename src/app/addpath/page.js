@@ -167,7 +167,7 @@ function SortableItem({ item, onRemove, onClick }) {
             alert('경로 저장에 실패했습니다.')
         }
     }
-
+    
     return (
         <div className="p-4 space-y-4 pb-20">
             <h1 className="text-2xl mt-10 mb-5 font-bold">나의 예술 산책 경로</h1>
@@ -211,7 +211,7 @@ function SortableItem({ item, onRemove, onClick }) {
             <div>
                 <button
                     onClick={() => setShowDialog(true)}
-                    className="w-full bg-indigo-500 text-white py-2 rounded shadow hover:bg-indigo-600 transition"
+                    className="w-full bg-blue-500 text-white py-2 rounded shadow hover:bg-blue-600 transition"
                 >
                 경로 추가하기
                 </button>
